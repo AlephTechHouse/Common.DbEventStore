@@ -54,4 +54,4 @@ jobs:
         run: >
           dotnet nuget push "out/*.nupkg" 
           --api-key ${{ secrets.NUGET_PAT }} 
-          --source https://nuget.pkg.github.com/david-yaari/index.json
+          --source  https://nuget.pkg.github.com/AlephTechHouse/index.json
