@@ -1,0 +1,57 @@
+name: Common.DbEventStore - Build and Deploy to NuGet
+
+on:
+  push:
+    branches:
+      - main # or replace with the name of your default branch
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      PROJECT_PATH: src/Common.DbEventStore
+      PROJECT_PATH_TEST: src/Common.DbEventStore.Tests
+      JWT_SECURITY_KEY: ${{ secrets.JWT_SECURITY_KEY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x' # adjust this to your project's .NET version
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}/Common.DbEventStore.csproj
+
+      - name: Build
+        run: >
+          dotnet build ${{ env.PROJECT_PATH }}/Common.DbEventStore.csproj 
+          --configuration Release 
+          --no-restore
+
+      - name: Restore test dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH_TEST }}/Common.DbEventStore.Tests.csproj
+
+      - name: Test
+        run: dotnet test ${{ env.PROJECT_PATH_TEST }}/Common.DbEventStore.Tests.csproj --no-restore
+
+      - name: Pack
+        run: >
+          dotnet pack ${{ env.PROJECT_PATH }}/Common.DbEventStore.csproj 
+          --configuration Release 
+          --no-build 
+          --include-symbols 
+          --output out 
+          --include-source
+
+      - name: Push to GitHub Packages
+        run: >
+          dotnet nuget push "out/*.nupkg" 
+          --api-key ${{ secrets.NUGET_PAT }} 
+          --source https://nuget.pkg.github.com/david-yaari/index.json
